@@ -11,5 +11,9 @@ class api
         $output = curl_exec($ch);
         curl_close($ch);
     }
+    public function ref($a)
+    {
+        header('refresh:'.$a[0].';url="'.$a[1].'"');
+    }
 }
 ?>

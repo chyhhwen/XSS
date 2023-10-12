@@ -1,5 +1,8 @@
 <?php
 require_once("./lib/database.php");
+require_once("./lib/api.php");
+require_once("./lib/txt.php");
+require_once("./lib/http.php");
 class router
 {
     public function get($url)
@@ -18,6 +21,19 @@ class router
                     http_response_code(404);
                     return require "./views/error.php";
                     die();
+                case '/sterilize':
+                    $txt = new txt();
+                    $http = new http();
+                    header('Content-type:application/json;charset=utf-8');
+                    header('Access-Control-Allow-Origin: *');
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $data = htmlspecialchars($data[0], ENT_QUOTES, 'UTF-8');
+                    if (stripos($data, '&') == true || stripos($data, '#') == true)
+                    {
+                        $txt -> put_test($http -> client_ip());
+                        $txt -> write();
+                    }
+                    break;
                 default:
                     http_response_code(404);
                     return require "./views/error.php";
@@ -106,7 +122,7 @@ class router
                         $sql -> config("root","","xss","text");
                         $sql -> put_data(['',$t,$n]);
                         $sql -> add("(?,?,?)");
-                        ref([0,'/storage']);
+                        $sql -> ref([0,'/storage']);
                     }
                     else
                     {
@@ -179,6 +195,42 @@ class router
                     </body>
                     </html>';
                     break;
+                case '/test':
+                    $api = new api();
+                    if(@$_POST['submit'])
+                    {
+                        $data = [$text = $_POST['text']];
+                        $api -> request('http://localhost/api/sterilize',json_encode($data));
+                        $api -> ref([0,'/test']);
+                    }
+                    else
+                    {
+                        echo '
+                        <html>
+                        <head>
+                            <link rel="stylesheet" href="./public/index.css">
+                            <meta charset="UTF-8">
+                            <title>xss demo</title>
+                        </head>
+                        <body>
+                        <table style="width:20vw;">
+                        <form action="" method="POST">
+                        <tr>
+                            <td>
+                                <input type="text" name="text" placeholder="輸入文字...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input type="submit" name="submit" value="送出">
+                            </td>
+                        </tr>
+                        </form>
+                        </table>
+                        </body>
+                        </html>';
+                    }
+                break;
                 default:
                     http_response_code(404);
                     return require "./views/error.php";
