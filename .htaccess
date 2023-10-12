@@ -1,0 +1,12 @@
+AddHandler application/x-httpd-php80 .php
+RewriteEngine on
+RewriteCond $1 !^(index\.php)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond $1 !^(index\.php|img|css|js|fonts|robots\.txt)
+RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+<Files ~ "\.(inc|txt|sql|conf|env)$">
+Order allow,deny
+Deny from all
+</Files>
+Options -Indexes
