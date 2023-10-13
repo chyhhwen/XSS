@@ -3,6 +3,8 @@ require_once("./lib/database.php");
 require_once("./lib/api.php");
 require_once("./lib/txt.php");
 require_once("./lib/http.php");
+require_once("./lib/jwt.php");
+require_once("./lib/whitelist.php");
 class router
 {
     public function get($url)
@@ -24,14 +26,48 @@ class router
                 case '/sterilize':
                     $txt = new txt();
                     $http = new http();
-                    header('Content-type:application/json;charset=utf-8');
-                    header('Access-Control-Allow-Origin: *');
-                    $data = json_decode(file_get_contents('php://input'), true);
-                    $data = htmlspecialchars($data[0], ENT_QUOTES, 'UTF-8');
-                    if (stripos($data, '&') == true || stripos($data, '#') == true)
+                    $clist = new clist();
+                    $http = new http();
+                    $jwt = new jwt();
+                    $payload = array(
+                         "user_id" => '123456',
+                         "username" => 'test'
+                    );
+                    $jwt -> put_key($payload,"yee");
+                    $temp = $jwt -> create();
+                    $clist -> config("root","","xss","list");
+                    $clist -> put_data(["id","ip","time"]);
+                    if($clist -> check($http -> client_ip()))
                     {
-                        $txt -> put_test($http -> client_ip());
-                        $txt -> write();
+                        http_response_code(404);
+                        return require "./views/error.php";
+                        die();
+                    }
+                    else
+                    {
+                        header('Content-type:application/json;charset=utf-8');
+                        header('Access-Control-Allow-Origin: *');
+                        $data = json_decode(file_get_contents('php://input'), true);
+                        $data = htmlspecialchars($data[0], ENT_QUOTES, 'UTF-8');
+                        if (stripos($data, '&') == true || stripos($data, '#') == true)
+                        {
+                            $clist -> put_data(['',$http -> client_ip(),time()]);
+                            $clist -> add("(?,?,?)");
+                        }
+                        else
+                        {
+                            $isValid  = $jwt -> verify($temp);
+                            if ($isValid)
+                            {
+                                $decoded = json_decode(base64_decode(explode('.', $temp)[1]));
+                                echo "Token is valid. User ID: " . $decoded->user_id;
+                            }
+                            else
+                            {
+                                $clist -> put_data(['',$http -> client_ip(),time()]);
+                                $clist -> add("(?,?,?)");
+                            }
+                        }
                     }
                     break;
                 default:
@@ -231,6 +267,40 @@ class router
                         </html>';
                     }
                 break;
+                case '/jwt':
+                    $jwt = new jwt();
+                    $payload = array(
+                         "user_id" => '123456',
+                         "username" => 'test'
+                    );
+                    $jwt -> put_key($payload,"yee");
+                    $temp = $jwt -> create();
+                    $isValid  = $jwt -> verify($temp);
+                    if ($isValid)
+                     {
+                         $decoded = json_decode(base64_decode(explode('.', $temp)[1]));
+                         echo "Token is valid. User ID: " . $decoded->user_id;
+                     }
+                     else
+                     {
+                         echo "Token is invalid.";
+                     }
+                    break;
+                case '/list':
+                    $clist = new clist();
+                    $http = new http();
+                    $clist -> config("root","","xss","list");
+                    $clist -> put_data(["id","ip","time"]);
+                    if($clist -> check($http -> client_ip()))
+                    {
+                       echo'error';
+                    }
+                    else
+                    {
+                        $clist -> put_data(['',$http -> client_ip(),time()]);
+                        $clist -> add("(?,?,?)");
+                    }
+                    break;
                 default:
                     http_response_code(404);
                     return require "./views/error.php";

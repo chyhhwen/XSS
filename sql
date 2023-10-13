@@ -10,4 +10,11 @@ CREATE TABLE text
      time varchar(255) not null
 );
 
+CREATE TABLE list
+(
+    id int AUTO_INCREMENT PRIMARY KEY,
+    ip varchar(255) not null,
+    time varchar(255) not null
+);
+
 INSERT INTO `text` VALUES('',"text","123");
