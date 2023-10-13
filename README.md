@@ -1,4 +1,6 @@
 # XSS練習
+## 流程圖
+![image](https://github.com/chyhhwen/XSS/blob/main/public/demo.png?raw=true)
 ## 目標
 - 實驗性
 - 更改性
